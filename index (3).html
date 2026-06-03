@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVANZA — Venezuela + Lending Model</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161a24;--bg3:#1d2130;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaf0;--text2:#9196a8;--text3:#555c72;
+  --green:#22c98a;--red:#e05c5c;--blue:#4d9fff;
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);
+  --blue-dim:rgba(77,159,255,0.12);--green-dim:rgba(34,201,138,0.12);
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;min-height:100vh;}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;}
+.logo{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text2);letter-spacing:0.06em;}
+.logo span{color:var(--text);}
+.hbadge{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;}
+.main{display:flex;min-height:calc(100vh - 57px);}
+.sidebar{width:320px;flex-shrink:0;border-right:1px solid var(--border);padding:0;overflow-y:auto;background:var(--bg);}
+.content{flex:1;padding:24px 28px;overflow-y:auto;min-width:0;}
+.seg-header{display:flex;align-items:center;gap:8px;padding:14px 18px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.seg-pm{background:#0d1520;}.seg-pM{background:#100d1a;}.seg-shared{background:#0f1117;}
+.seg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.seg-dot.pm{background:var(--blue);}.seg-dot.pM{background:var(--amber);}.seg-dot.sh{background:var(--text3);}
+.seg-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;}
+.seg-title.pm{color:var(--blue);}.seg-title.pM{color:var(--amber);}.seg-title.sh{color:var(--text2);}
+.seg-body{padding:14px 18px 18px;}
+.ctrl-section{margin-bottom:18px;}
+.ctrl-section-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.ctrl-row{margin-bottom:12px;}
+.ctrl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+.ctrl-label{font-size:11px;color:var(--text2);}
+.ctrl-val{font-family:var(--mono);font-size:11px;color:var(--text);font-weight:500;}
+.ctrl-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;}
+input[type=range].pm{background:#0d2040;}input[type=range].pM{background:#1a1028;}input[type=range].sh{background:var(--bg3);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg);cursor:pointer;transition:transform 0.1s;}
+input[type=range].pm::-webkit-slider-thumb{background:var(--blue);box-shadow:0 0 0 1px var(--blue);}
+input[type=range].pM::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 0 1px var(--amber);}
+input[type=range].sh::-webkit-slider-thumb{background:var(--text2);box-shadow:0 0 0 1px var(--text2);}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.tab-row{display:flex;margin-bottom:22px;border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{font-size:13px;padding:7px 14px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.15s;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--text);border-bottom-color:var(--blue);font-weight:500;}
+.panel{display:none;}.panel.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:20px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px;}
+.kpi.pm{border-left:2px solid var(--blue);}.kpi.pM{border-left:2px solid var(--amber);}.kpi.tot{border-left:2px solid var(--green);}.kpi.inv{border-left:2px solid var(--purple);}
+.kpi-label{font-size:10px;color:var(--text3);margin-bottom:5px;}
+.kpi-value{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--text);line-height:1;}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px;}
+.kpi-value.pos{color:var(--green);}.kpi-value.neg{color:var(--red);}.kpi-value.blue{color:var(--blue);}.kpi-value.amber{color:var(--amber);}.kpi-value.purple{color:var(--purple);}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;margin-top:22px;}
+.sec-label:first-child{margin-top:0;}
+.seg-tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-bottom:12px;}
+.seg-tag.pm{color:var(--blue);background:var(--blue-dim);border:1px solid rgba(77,159,255,0.2);}
+.seg-tag.pM{color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,166,35,0.2);}
+.seg-tag.tot{color:var(--green);background:var(--green-dim);border:1px solid rgba(34,201,138,0.2);}
+.seg-tag.inv{color:var(--purple);background:var(--purple-dim);border:1px solid rgba(167,139,250,0.2);}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px;margin-bottom:18px;}
+.chart-box canvas{max-height:240px;}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:11px;color:var(--text2);}
+.ld{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle;}
+.table-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:16px;}
+.pnl-table{width:100%;border-collapse:collapse;font-size:12px;}
+.pnl-table th{text-align:left;font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:0.07em;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap;}
+.pnl-table th:not(:first-child){text-align:right;}
+.pnl-table td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text);font-variant-numeric:tabular-nums;}
+.pnl-table td:not(:first-child){text-align:right;font-family:var(--mono);font-size:12px;}
+.pnl-table tr:last-child td{border-bottom:none;}
+.pnl-table tr.grp td{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;padding-top:16px;padding-bottom:3px;border-bottom:none;background:none;}
+.pnl-table tr.grp.pm td{color:var(--blue);}.pnl-table tr.grp.pM td{color:var(--amber);}.pnl-table tr.grp.tot td{color:var(--green);}.pnl-table tr.grp.inv td{color:var(--purple);}
+.pnl-table tr.sub td{font-weight:600;background:var(--bg3);}
+.pnl-table tr.tot td{font-weight:600;font-size:13px;background:var(--bg3);border-top:1px solid var(--border2);}
+.pnl-table td.n{color:var(--red);}.pnl-table td.p{color:var(--green);}.pnl-table td.b{color:var(--blue);}.pnl-table td.a{color:var(--amber);}.pnl-table td.pu{color:var(--purple);}
+.pnl-table tr:not(.grp):not(.sub):not(.tot):hover td{background:rgba(255,255,255,0.015);}
+.sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.sc-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px;cursor:pointer;background:var(--bg2);transition:border-color 0.15s;}
+.sc-card:hover{border-color:var(--border2);}.sc-card.active{border-color:var(--blue);background:var(--blue-dim);}
+.sc-card .scl{font-size:10px;color:var(--text3);margin-bottom:3px;}.sc-card .scv{font-size:14px;font-weight:600;color:var(--text);}.sc-card .scs{font-size:10px;color:var(--text3);margin-top:5px;}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.note{font-size:10px;color:var(--text3);margin-top:8px;line-height:1.6;}
+.cof-bar{display:flex;gap:0;border-radius:6px;overflow:hidden;height:6px;margin-top:6px;margin-bottom:2px;}
+.cof-bar-seg{height:100%;transition:width 0.3s;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+@media(max-width:900px){.main{flex-direction:column;}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);}.content{padding:16px;}.kpi-grid{grid-template-columns:repeat(2,1fr);}.sc-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">AVANZA</div>
+  <div class="hbadge">Venezuela + Lending · Dual-Book Model · Confidential</div>
+</header>
+<div class="main">
+<aside class="sidebar">
+
+  <!-- PLAN MENOR -->
+  <div class="seg-header seg-pm"><div class="seg-dot pm"></div><div class="seg-title pm">Plan Menor — Consumer Financing</div></div>
+  <div class="seg-body">
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Portfolio</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Cars financed Y1</span><span class="ctrl-val" id="o-pm-n">240</span></div><input type="range" class="pm" min="10" max="500" step="5" value="240" id="pm-n" oninput="syncPM('n')"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Avg loan size</span><span class="ctrl-val" id="o-pm-size">$50,000</span></div><input type="range" class="pm" min="5000" max="100000" step="1000" value="50000" id="pm-size" oninput="syncPM('size')"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Portfolio Y1</span><span class="ctrl-val" id="o-pm-port">$12,000,000</span></div><input type="range" class="pm" min="50000" max="20000000" step="50000" value="12000000" id="pm-port" oninput="syncPM('port')"><div class="ctrl-sub">Cars × avg loan size</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Annual portfolio growth</span><span class="ctrl-val" id="o-pm-grow">60%</span></div><input type="range" class="pm" min="10" max="150" step="5" value="60" id="pm-grow" oninput="update()"></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Loan Terms</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Loan rate to borrower</span><span class="ctrl-val" id="o-pm-rate">24.00%</span></div><input type="range" class="pm" min="10" max="28" step="0.5" value="24" id="pm-rate" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Avg tenor (months)</span><span class="ctrl-val" id="o-pm-tenor">24 mo</span></div><input type="range" class="pm" min="12" max="48" step="6" value="24" id="pm-tenor" oninput="update()"><div class="ctrl-sub">Typical range: 24–36 months</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">LTV cap</span><span class="ctrl-val" id="o-pm-ltv">70%</span></div><input type="range" class="pm" min="40" max="80" step="5" value="70" id="pm-ltv" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Origination fee</span><span class="ctrl-val" id="o-pm-orig">1.00%</span></div><input type="range" class="pm" min="0" max="3" step="0.25" value="1" id="pm-orig" oninput="update()"></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Credit</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Gross default rate</span><span class="ctrl-val" id="o-pm-def">2.00%</span></div><input type="range" class="pm" min="0.5" max="10" step="0.5" value="2" id="pm-def" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Recovery rate</span><span class="ctrl-val" id="o-pm-rec">85%</span></div><input type="range" class="pm" min="40" max="95" step="5" value="85" id="pm-rec" oninput="update()"></div>
+    </div>
+  </div>
+
+  <!-- PLAN MAYOR -->
+  <div class="seg-header seg-pM"><div class="seg-dot pM"></div><div class="seg-title pM">Plan Mayor — Dealer Floor Plan</div></div>
+  <div class="seg-body">
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Portfolio</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Units financed Y1</span><span class="ctrl-val" id="o-pM-n">150</span></div><input type="range" class="pM" min="5" max="300" step="5" value="150" id="pM-n" oninput="syncPMay('n')"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Avg loan size per unit</span><span class="ctrl-val" id="o-pM-size">$50,000</span></div><input type="range" class="pM" min="5000" max="150000" step="1000" value="50000" id="pM-size" oninput="syncPMay('size')"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Portfolio Y1</span><span class="ctrl-val" id="o-pM-port">$7,500,000</span></div><input type="range" class="pM" min="50000" max="20000000" step="50000" value="7500000" id="pM-port" oninput="syncPMay('port')"><div class="ctrl-sub">Units × avg loan size</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Annual portfolio growth</span><span class="ctrl-val" id="o-pM-grow">60%</span></div><input type="range" class="pM" min="10" max="150" step="5" value="60" id="pM-grow" oninput="update()"></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Loan Terms</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Loan rate to dealer</span><span class="ctrl-val" id="o-pM-rate">8.00%</span></div><input type="range" class="pM" min="4" max="20" step="0.5" value="8" id="pM-rate" oninput="update()"><div class="ctrl-sub">Floor plan market rates: 6–10%</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Avg tenor (months)</span><span class="ctrl-val" id="o-pM-tenor">7 mo</span></div><input type="range" class="pM" min="3" max="12" step="1" value="7" id="pM-tenor" oninput="update()"><div class="ctrl-sub">Typical range: 6–8 months</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Origination fee</span><span class="ctrl-val" id="o-pM-orig">1.50%</span></div><input type="range" class="pM" min="0" max="4" step="0.25" value="1.5" id="pM-orig" oninput="update()"></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Credit</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Gross default rate</span><span class="ctrl-val" id="o-pM-def">0.50%</span></div><input type="range" class="pM" min="0" max="5" step="0.5" value="0.5" id="pM-def" oninput="update()"><div class="ctrl-sub">Dealer counterparty — lower risk</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Recovery rate</span><span class="ctrl-val" id="o-pM-rec">95%</span></div><input type="range" class="pM" min="50" max="99" step="5" value="95" id="pM-rec" oninput="update()"><div class="ctrl-sub">Vehicle inventory collateral</div></div>
+    </div>
+  </div>
+
+  <!-- SHARED / COST OF CAPITAL / OPEX -->
+  <div class="seg-header seg-shared"><div class="seg-dot sh"></div><div class="seg-title sh">Shared — Capital Structure & OpEx</div></div>
+  <div class="seg-body">
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Funding Mix</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">% funded via credit line (SOFR+spread)</span><span class="ctrl-val" id="o-cline-pct">70%</span></div><input type="range" class="sh" min="0" max="100" step="5" value="70" id="cline-pct" oninput="update()"><div class="ctrl-sub" id="o-inv-pct-sub">Remainder (30%) funded by investors</div></div>
+      <div class="ctrl-row">
+        <div id="cof-bar-wrap"><div class="cof-bar"><div class="cof-bar-seg" id="bar-cline" style="background:var(--blue);width:70%;"></div><div class="cof-bar-seg" id="bar-inv" style="background:var(--purple);width:30%;"></div></div></div>
+      </div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">SOFR rate</span><span class="ctrl-val" id="o-sofr">3.51%</span></div><input type="range" class="sh" min="2" max="7" step="0.01" value="3.51" id="sofr" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Spread over SOFR (bps)</span><span class="ctrl-val" id="o-bps">75 bps</span></div><input type="range" class="sh" min="0" max="500" step="5" value="75" id="bps" oninput="update()"><div class="ctrl-sub" id="o-cof-line">= 0.75% · Credit line CoF: 4.26%</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Investor required return</span><span class="ctrl-val" id="o-inv-rate">12.00%</span></div><input type="range" class="sh" min="6" max="25" step="0.5" value="12" id="inv-rate" oninput="update()"><div class="ctrl-sub">Hurdle rate / preferred return to investors</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Blended cost of capital</span><span class="ctrl-val" id="o-blended-coc" style="color:var(--green);">—</span></div><div class="ctrl-sub" id="o-blended-sub">Weighted avg of both funding sources</div></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Annual Operating Costs</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Staff & operations</span><span class="ctrl-val" id="o-staff">$120,000</span></div><input type="range" class="sh" min="30000" max="500000" step="5000" value="120000" id="staff" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Legal & compliance</span><span class="ctrl-val" id="o-legal">$40,000</span></div><input type="range" class="sh" min="10000" max="150000" step="5000" value="40000" id="legal" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Technology & credit systems</span><span class="ctrl-val" id="o-tech">$25,000</span></div><input type="range" class="sh" min="5000" max="100000" step="5000" value="25000" id="tech" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Repo & collections</span><span class="ctrl-val" id="o-repo">$20,000</span></div><input type="range" class="sh" min="5000" max="80000" step="5000" value="20000" id="repo" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Year 1 setup costs</span><span class="ctrl-val" id="o-setup">$50,000</span></div><input type="range" class="sh" min="10000" max="150000" step="5000" value="50000" id="setup" oninput="update()"></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Taxes</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Corporate income tax — ISLR</span><span class="ctrl-val" id="o-taxrate">34.00%</span></div><input type="range" class="sh" min="0" max="40" step="1" value="34" id="taxrate" oninput="update()"><div class="ctrl-sub">Venezuela ISLR statutory: 34%. Financial entities up to 40%.</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">IGTF on USD collections</span><span class="ctrl-val" id="o-igtf">3.00%</span></div><input type="range" class="sh" min="0" max="5" step="0.5" value="3" id="igtf" oninput="update()"><div class="ctrl-sub">Applied to gross interest income collected in USD. Enacted 2022.</div></div>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Investor Parameters</div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Investor capital deployed ($)</span><span class="ctrl-val" id="o-inv-capital">—</span></div><div class="ctrl-sub">Auto-calculated from funding mix × total portfolio</div></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Investment horizon (years)</span><span class="ctrl-val" id="o-inv-horizon">5 yr</span></div><input type="range" class="sh" min="1" max="7" step="1" value="5" id="inv-horizon" oninput="update()"></div>
+      <div class="ctrl-row"><div class="ctrl-top"><span class="ctrl-label">Carry / promote to mgmt (%)</span><span class="ctrl-val" id="o-carry">20%</span></div><input type="range" class="sh" min="0" max="30" step="5" value="20" id="carry" oninput="update()"><div class="ctrl-sub">% of profits above hurdle retained by management</div></div>
+    </div>
+  </div>
+</aside>
+
+<main class="content">
+  <div class="tab-row">
+    <div class="tab active" onclick="sw('overview')">Overview</div>
+    <div class="tab" onclick="sw('pnl')">P&L</div>
+    <div class="tab" onclick="sw('portfolio')">Portfolio</div>
+    <div class="tab" onclick="sw('scenarios')">Scenarios</div>
+    <div class="tab" onclick="sw('investor')">Investor Returns</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="panel active">
+    <div class="sec-label">Year 1 — consolidated key metrics</div>
+    <div class="kpi-grid" id="kpi-consolidated"></div>
+    <div class="sec-label">Plan Menor — consumer financing</div>
+    <div class="seg-tag pm">● Plan Menor</div>
+    <div class="kpi-grid" id="kpi-pm"></div>
+    <div class="sec-label">Plan Mayor — dealer floor plan</div>
+    <div class="seg-tag pM">● Plan Mayor</div>
+    <div class="kpi-grid" id="kpi-pM"></div>
+    <div class="sec-label">5-year consolidated net income</div>
+    <div class="legend">
+      <span><span class="ld" style="background:#4d9fff;"></span>Plan Menor interest</span>
+      <span><span class="ld" style="background:#f5a623;"></span>Plan Mayor interest</span>
+      <span><span class="ld" style="background:rgba(224,92,92,0.65);"></span>Total costs</span>
+      <span><span class="ld" style="background:#22c98a;border-radius:50%;"></span>Consolidated net income</span>
+    </div>
+    <div class="chart-box"><canvas id="cOverview"></canvas></div>
+  </div>
+
+  <!-- P&L -->
+  <div id="tab-pnl" class="panel">
+    <div class="seg-tag pm">● Plan Menor — Consumer Financing</div>
+    <div class="table-box"><div style="overflow-x:auto;"><table class="pnl-table" id="pnl-pm"></table></div></div>
+    <div class="seg-tag pM" style="margin-top:20px;">● Plan Mayor — Dealer Floor Plan</div>
+    <div class="table-box"><div style="overflow-x:auto;"><table class="pnl-table" id="pnl-pM"></table></div></div>
+    <div class="seg-tag tot" style="margin-top:20px;">● Consolidated P&L</div>
+    <div class="table-box"><div style="overflow-x:auto;"><table class="pnl-table" id="pnl-tot"></table></div></div>
+    <p class="note">All figures USD. Origination fee charged one-time on new loans each year only. Plan Mayor uses short-tenor revolving model: loans recycle within the year. Blended cost of funds = weighted average of credit line (SOFR+spread) and investor capital at their respective rates. IGTF on gross USD interest. ISLR on positive EBITDA after IGTF.</p>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div id="tab-portfolio" class="panel">
+    <div class="seg-tag pm">● Plan Menor</div>
+    <div class="kpi-grid" id="port-pm"></div>
+    <div class="seg-tag pM">● Plan Mayor</div>
+    <div class="kpi-grid" id="port-pM"></div>
+    <div class="sec-label">Loan book growth — both books ($)</div>
+    <div class="legend">
+      <span><span class="ld" style="background:#4d9fff;"></span>Plan Menor</span>
+      <span><span class="ld" style="background:#f5a623;"></span>Plan Mayor</span>
+      <span><span class="ld" style="background:#22c98a;"></span>Consolidated</span>
+    </div>
+    <div class="chart-box"><canvas id="cPort"></canvas></div>
+    <div class="divider"></div>
+    <div class="sec-label">Per-loan unit economics (single loan, annualized)</div>
+    <div class="seg-tag pm">● Plan Menor</div>
+    <div class="kpi-grid" id="per-pm"></div>
+    <div class="seg-tag pM">● Plan Mayor</div>
+    <div class="kpi-grid" id="per-pM"></div>
+  </div>
+
+  <!-- SCENARIOS -->
+  <div id="tab-scenarios" class="panel">
+    <div class="sec-label">Select scenario</div>
+    <div class="sc-grid">
+      <div class="sc-card active" id="sc-base" onclick="setSc('base')"><div class="scl">Base case</div><div class="scv">Structured growth</div><div class="scs">2% / 1% default · 60% growth</div></div>
+      <div class="sc-card" id="sc-bull" onclick="setSc('bull')"><div class="scl">Bull case</div><div class="scv">Strong demand</div><div class="scs">1% / 0.5% default · 90% growth</div></div>
+      <div class="sc-card" id="sc-bear" onclick="setSc('bear')"><div class="scl">Bear case</div><div class="scv">Slow growth</div><div class="scs">2% / 1% default · 30% growth</div></div>
+    </div>
+    <div class="kpi-grid" id="sc-metrics"></div>
+    <div class="sec-label">Cumulative consolidated net income — all scenarios</div>
+    <div class="legend">
+      <span><span class="ld" style="background:#4d9fff;"></span>Base</span>
+      <span><span class="ld" style="background:#22c98a;"></span>Bull</span>
+      <span><span class="ld" style="background:#e05c5c;"></span>Bear</span>
+    </div>
+    <div class="chart-box"><canvas id="cSc"></canvas></div>
+    <div class="divider"></div>
+    <div class="sec-label">Year 5 consolidated EBITDA by scenario</div>
+    <div class="chart-box" style="padding:18px;"><canvas id="cScBar" style="max-height:110px;"></canvas></div>
+  </div>
+
+  <!-- INVESTOR RETURNS -->
+  <div id="tab-investor" class="panel">
+    <div class="seg-tag inv">● Investor Return Analysis</div>
+    <div class="sec-label">Capital structure & returns</div>
+    <div class="kpi-grid" id="inv-kpis"></div>
+    <div class="sec-label">Benchmarks by segment</div>
+    <div id="inv-benchmarks"></div>
+    <div class="sec-label">Investor cash flows — annual distributions ($)</div>
+    <div class="legend">
+      <span><span class="ld" style="background:var(--purple);"></span>Investor preferred return</span>
+      <span><span class="ld" style="background:rgba(167,139,250,0.4);"></span>Investor profit share (above hurdle)</span>
+      <span><span class="ld" style="background:var(--green);border-radius:50%;"></span>Cumulative investor cash returned</span>
+    </div>
+    <div class="chart-box"><canvas id="cInvCF"></canvas></div>
+    <div class="sec-label">Investor return table</div>
+    <div class="table-box"><div style="overflow-x:auto;"><table class="pnl-table" id="pnl-inv"></table></div></div>
+    <div class="divider"></div>
+    <div class="sec-label">Management economics (carry above hurdle)</div>
+    <div class="kpi-grid" id="mgmt-kpis"></div>
+    <p class="note"><strong style="color:var(--text2);">IRR</strong> — annualized return on the investor's cash flows: initial capital out (Year 0), annual distributions in (Years 1–N), plus return of principal at end of horizon. Calculated via Newton-Raphson. &nbsp;|&nbsp; <strong style="color:var(--text2);">MOIC</strong> — total cash returned ÷ capital invested, measured over the selected horizon. Always specify the time period alongside MOIC — a 2× over 3 years is very different from 2× over 8 years. &nbsp;|&nbsp; <strong style="color:var(--text2);">DPI</strong> — distributions paid in only (excludes terminal principal return). Shows how much cash the investor has received before exit. &nbsp;|&nbsp; <strong style="color:var(--text2);">Capital payback</strong> — year when cumulative distributions alone (before terminal return) recover the initial investment. &nbsp;|&nbsp; <strong style="color:var(--text2);">Carry</strong> — management's share of profits above the hurdle rate, earned only after investor preferred return is fully satisfied each year. &nbsp;|&nbsp; <strong style="color:var(--text2);">Important:</strong> the investor's cost is already embedded in the blended cost of capital charged to the loan portfolio in the P&L. The investor tab shows how that cost is distributed as cash flows — it does not add an additional charge on top of the P&L.</p>
+  </div>
+</main>
+</div>
+
+<script>
+let cOv,cPo,cSc,cScB,cInvCF;
+let curSc='base';
+
+function gv(id){return parseFloat(document.getElementById(id).value);}
+
+function syncPM(ch){
+  const nE=document.getElementById('pm-n'),sE=document.getElementById('pm-size'),pE=document.getElementById('pm-port');
+  let n=parseFloat(nE.value),s=parseFloat(sE.value),p=parseFloat(pE.value);
+  if(ch==='n'||ch==='size'){p=Math.min(Math.max(n*s,parseFloat(pE.min)),parseFloat(pE.max));pE.value=p;}
+  else{n=Math.min(Math.max(Math.round(p/s),parseFloat(nE.min)),parseFloat(nE.max));nE.value=n;}
+  document.getElementById('o-pm-n').textContent=Math.round(parseFloat(nE.value)).toLocaleString();
+  document.getElementById('o-pm-size').textContent='$'+parseFloat(sE.value).toLocaleString('en-US');
+  document.getElementById('o-pm-port').textContent='$'+parseFloat(pE.value).toLocaleString('en-US');
+  update();
+}
+function syncPMay(ch){
+  const nE=document.getElementById('pM-n'),sE=document.getElementById('pM-size'),pE=document.getElementById('pM-port');
+  let n=parseFloat(nE.value),s=parseFloat(sE.value),p=parseFloat(pE.value);
+  if(ch==='n'||ch==='size'){p=Math.min(Math.max(n*s,parseFloat(pE.min)),parseFloat(pE.max));pE.value=p;}
+  else{n=Math.min(Math.max(Math.round(p/s),parseFloat(nE.min)),parseFloat(nE.max));nE.value=n;}
+  document.getElementById('o-pM-n').textContent=Math.round(parseFloat(nE.value)).toLocaleString();
+  document.getElementById('o-pM-size').textContent='$'+parseFloat(sE.value).toLocaleString('en-US');
+  document.getElementById('o-pM-port').textContent='$'+parseFloat(pE.value).toLocaleString('en-US');
+  update();
+}
+
+function fmt(v,d){if(d===undefined)d=0;return(Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtD(v){return(v<0?'-':'')+'$'+fmt(Math.abs(v));}
+function fmtP(v){return fmt(v,2)+'%';}
+function fmtAx(v){const a=Math.abs(v);return(v<0?'-':'')+'$'+(a>=1e6?(a/1e6).toFixed(1)+'M':a>=1000?(a/1000).toFixed(0)+'K':a);}
+
+/* ── BLENDED COST OF CAPITAL ── */
+function blendedCoC(){
+  const clinePct=gv('cline-pct')/100;
+  const invPct=1-clinePct;
+  const clineCof=gv('sofr')/100+gv('bps')/10000;
+  const invRate=gv('inv-rate')/100;
+  return clinePct*clineCof+invPct*invRate;
+}
+
+function getPM(sc){
+  let def=gv('pm-def')/100,grow=gv('pm-grow')/100;
+  if(sc==='bull'){def=0.01;grow=0.90;}if(sc==='bear'){def=0.02;grow=0.30;}
+  return{portY1:gv('pm-port'),grow,lrate:gv('pm-rate')/100,tenor:gv('pm-tenor'),ltv:gv('pm-ltv')/100,orig:gv('pm-orig')/100,def,rec:gv('pm-rec')/100,lsize:gv('pm-size'),nloans:gv('pm-n'),cof:blendedCoC()};
+}
+function getPMay(sc){
+  let def=gv('pM-def')/100,grow=gv('pM-grow')/100;
+  if(sc==='bull'){def=0.005;grow=0.90;}if(sc==='bear'){def=0.01;grow=0.30;}
+  return{portY1:gv('pM-port'),grow,lrate:gv('pM-rate')/100,tenor:gv('pM-tenor'),orig:gv('pM-orig')/100,def,rec:gv('pM-rec')/100,lsize:gv('pM-size'),nloans:gv('pM-n'),cof:blendedCoC()};
+}
+function getShared(){
+  return{staff:gv('staff'),legal:gv('legal'),tech:gv('tech'),repo:gv('repo'),setup:gv('setup'),taxrate:gv('taxrate')/100,igtf:gv('igtf')/100,
+    clinePct:gv('cline-pct')/100,invPct:1-gv('cline-pct')/100,
+    clineCof:gv('sofr')/100+gv('bps')/10000,invRate:gv('inv-rate')/100,
+    invHorizon:gv('inv-horizon'),carry:gv('carry')/100};
+}
+
+function calcBook(p,yr){
+  const amort=Math.min(12/p.tenor,1);
+  function cohortSize(b){if(b===1)return p.portY1;return p.portY1*p.grow*Math.pow(1+p.grow,b-2);}
+  function cohortBal(b,yr){if(yr<b)return 0;const s=(1-amort)*(1-p.def);return Math.max(cohortSize(b)*Math.pow(s,yr-b),0);}
+  let existingBook=0;
+  for(let b=1;b<yr;b++)existingBook+=cohortBal(b,yr);
+  const newOrig=cohortSize(yr);
+  const avgPort=existingBook+newOrig*0.5;
+  const nLoans=Math.round(avgPort/p.lsize);
+  const grossInterest=avgPort*p.lrate;
+  const fundCost=avgPort*p.cof;
+  const grossDef=avgPort*p.def;
+  const recovery=grossDef*p.rec;
+  const netLoss=grossDef-recovery;
+  const origIncome=newOrig*p.orig;
+  const netSpread=grossInterest-fundCost-netLoss+origIncome;
+  return{avgPort,nLoans,newOrig,existingBook,grossInterest,fundCost,grossDef,recovery,netLoss,origIncome,netSpread,
+    netYield:avgPort>0?(netSpread/avgPort)*100:0,netLossRate:p.def*(1-p.rec)*100,grossSpread:(p.lrate-p.cof)*100};
+}
+
+function calcYear(sc,yr,invCapFixed){
+  const pm=getPM(sc),pM=getPMay(sc),sh=getShared();
+  const bPm=calcBook(pm,yr),bPM=calcBook(pM,yr);
+  const totalOpex=(sh.staff+sh.legal+sh.tech+sh.repo)+(yr===1?sh.setup:0);
+  const totalNetSpread=bPm.netSpread+bPM.netSpread;
+  const igtf=(bPm.grossInterest+bPM.grossInterest)*sh.igtf;
+  const ebitda=totalNetSpread-totalOpex-igtf;
+  const tax=ebitda>0?ebitda*sh.taxrate:0;
+  const netIncome=ebitda-tax;
+  const totalAvgPort=bPm.avgPort+bPM.avgPort;
+  // Investor capital is ANCHORED at Year 1 (fixed deployment, not floating).
+  // Investor cost is ALREADY in the blended CoC embedded in the spread.
+  // Here we only split net income: investor gets hurdle first, carry applies above that.
+  const invCap=invCapFixed!==undefined?invCapFixed:totalAvgPort*sh.invPct;
+  const hurdleReturn=invCap*sh.invRate;
+  const invPreferred=Math.max(0,Math.min(hurdleReturn,netIncome));
+  const remainingAfterPref=Math.max(0,netIncome-invPreferred);
+  const carryAmt=remainingAfterPref*sh.carry;
+  const invProfitShare=remainingAfterPref*(1-sh.carry);
+  const invDistribution=invPreferred+invProfitShare;
+  const mgmtShare=Math.max(0,netIncome-invDistribution);
+  const clinePortCost=totalAvgPort*sh.clinePct*sh.clineCof;
+  const invPortCost=totalAvgPort*sh.invPct*sh.invRate;
+  return{pm:bPm,pM:bPM,totalNetSpread,igtf,totalOpex,ebitda,tax,netIncome,totalAvgPort,
+    invCap,hurdleReturn,invPreferred,invProfitShare,invDistribution,mgmtShare,carryAmt,
+    clinePortCost,invPortCost};
+}
+
+/* ── COMPUTE IRR ── */
+function computeIRR(cashflows){
+  let r=0.1;
+  for(let i=0;i<100;i++){
+    let npv=0,dnpv=0;
+    cashflows.forEach((cf,t)=>{const d=Math.pow(1+r,t);npv+=cf/d;dnpv+=-t*cf/Math.pow(1+r,t+1);});
+    if(Math.abs(dnpv)<1e-10)break;
+    const nr=r-npv/dnpv;
+    if(Math.abs(nr-r)<1e-8){r=nr;break;}
+    r=nr;
+  }
+  return r;
+}
+
+/* ── MAIN UPDATE ── */
+function update(){
+  const sofr=gv('sofr'),bpsV=gv('bps'),clinePct=gv('cline-pct'),invPct=100-clinePct;
+  const clineCof=sofr+bpsV/100;
+  const invRate=gv('inv-rate');
+  const blended=blendedCoC()*100;
+
+  document.getElementById('o-sofr').textContent=fmtP(sofr);
+  document.getElementById('o-bps').textContent=fmt(bpsV)+' bps';
+  document.getElementById('o-cof-line').textContent='= '+fmtP(bpsV/100)+' · Credit line CoF: '+fmtP(clineCof);
+  document.getElementById('o-cline-pct').textContent=fmt(clinePct)+'%';
+  document.getElementById('o-inv-pct-sub').textContent='Remainder ('+fmt(invPct)+'%) funded by investors';
+  document.getElementById('o-inv-rate').textContent=fmtP(invRate);
+  document.getElementById('o-blended-coc').textContent=fmtP(blended);
+  document.getElementById('o-blended-sub').textContent=fmtP(clinePct*clineCof/100*100)+' credit line + '+fmtP(invPct/100*invRate)+' investor = '+fmtP(blended)+' blended';
+  document.getElementById('bar-cline').style.width=clinePct+'%';
+  document.getElementById('bar-inv').style.width=invPct+'%';
+  document.getElementById('o-pm-n').textContent=fmt(gv('pm-n'));
+  document.getElementById('o-pm-size').textContent='$'+fmt(gv('pm-size'));
+  document.getElementById('o-pm-port').textContent='$'+fmt(gv('pm-port'));
+  document.getElementById('o-pm-grow').textContent=fmt(gv('pm-grow'))+'%';
+  document.getElementById('o-pm-rate').textContent=fmtP(gv('pm-rate'));
+  document.getElementById('o-pm-tenor').textContent=fmt(gv('pm-tenor'))+' mo';
+  document.getElementById('o-pm-ltv').textContent=fmt(gv('pm-ltv'))+'%';
+  document.getElementById('o-pm-orig').textContent=fmtP(gv('pm-orig'));
+  document.getElementById('o-pm-def').textContent=fmtP(gv('pm-def'));
+  document.getElementById('o-pm-rec').textContent=fmt(gv('pm-rec'))+'%';
+  document.getElementById('o-pM-n').textContent=fmt(gv('pM-n'));
+  document.getElementById('o-pM-size').textContent='$'+fmt(gv('pM-size'));
+  document.getElementById('o-pM-port').textContent='$'+fmt(gv('pM-port'));
+  document.getElementById('o-pM-grow').textContent=fmt(gv('pM-grow'))+'%';
+  document.getElementById('o-pM-rate').textContent=fmtP(gv('pM-rate'));
+  document.getElementById('o-pM-tenor').textContent=fmt(gv('pM-tenor'))+' mo';
+  document.getElementById('o-pM-orig').textContent=fmtP(gv('pM-orig'));
+  document.getElementById('o-pM-def').textContent=fmtP(gv('pM-def'));
+  document.getElementById('o-pM-rec').textContent=fmt(gv('pM-rec'))+'%';
+  document.getElementById('o-staff').textContent='$'+fmt(gv('staff'));
+  document.getElementById('o-legal').textContent='$'+fmt(gv('legal'));
+  document.getElementById('o-tech').textContent='$'+fmt(gv('tech'));
+  document.getElementById('o-repo').textContent='$'+fmt(gv('repo'));
+  document.getElementById('o-setup').textContent='$'+fmt(gv('setup'));
+  document.getElementById('o-taxrate').textContent=fmtP(gv('taxrate'));
+  document.getElementById('o-igtf').textContent=fmtP(gv('igtf'));
+  document.getElementById('o-inv-horizon').textContent=fmt(gv('inv-horizon'))+' yr';
+  document.getElementById('o-carry').textContent=fmt(gv('carry'))+'%';
+
+  // Anchor investor capital to Year 1 portfolio (fixed deployment, not floating each year)
+  const y1base=calcYear('base',1);
+  const invCapAnchored=y1base.totalAvgPort*(1-gv('cline-pct')/100);
+  const years=[1,2,3,4,5].map(y=>calcYear('base',y,invCapAnchored));
+  const y1=years[0],y5=years[4];
+  const sh=getShared();
+
+  document.getElementById('o-inv-capital').textContent=fmtD(Math.round(invCapAnchored));
+
+  document.getElementById('kpi-consolidated').innerHTML=`
+    <div class="kpi tot"><div class="kpi-label">Combined Y1 portfolio</div><div class="kpi-value">${fmtD(Math.round(y1.totalAvgPort))}</div><div class="kpi-sub">Plan Menor + Plan Mayor</div></div>
+    <div class="kpi tot"><div class="kpi-label">Blended cost of capital</div><div class="kpi-value">${fmtP(blended)}</div><div class="kpi-sub">${fmtP(clinePct*clineCof/100*100)} line + ${fmtP((100-clinePct)/100*invRate)} investors</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y1 EBITDA</div><div class="kpi-value ${y1.ebitda>=0?'pos':'neg'}">${fmtD(Math.round(y1.ebitda))}</div><div class="kpi-sub">after OpEx + IGTF</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y1 net income</div><div class="kpi-value ${y1.netIncome>=0?'pos':'neg'}">${fmtD(Math.round(y1.netIncome))}</div><div class="kpi-sub">after ISLR ${fmtP(gv('taxrate'))}</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y5 portfolio</div><div class="kpi-value">${fmtD(Math.round(y5.totalAvgPort))}</div><div class="kpi-sub">combined book</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y5 net income</div><div class="kpi-value pos">${fmtD(Math.round(y5.netIncome))}</div><div class="kpi-sub">fully scaled</div></div>
+  `;
+  document.getElementById('kpi-pm').innerHTML=`
+    <div class="kpi pm"><div class="kpi-label">Y1 portfolio</div><div class="kpi-value blue">${fmtD(Math.round(y1.pm.avgPort))}</div><div class="kpi-sub">${fmt(y1.pm.nLoans)} loans avg</div></div>
+    <div class="kpi pm"><div class="kpi-label">Lending rate</div><div class="kpi-value blue">${fmtP(gv('pm-rate'))}</div><div class="kpi-sub">Gross spread ${fmtP(y1.pm.grossSpread)}</div></div>
+    <div class="kpi pm"><div class="kpi-label">Net spread Y1</div><div class="kpi-value pos">${fmtD(Math.round(y1.pm.netSpread))}</div><div class="kpi-sub">${fmtP(y1.pm.netYield)} net yield</div></div>
+    <div class="kpi pm"><div class="kpi-label">Net loss rate</div><div class="kpi-value neg">${fmtP(y1.pm.netLossRate)}</div><div class="kpi-sub">Tenor ${fmt(gv('pm-tenor'))} mo</div></div>
+  `;
+  document.getElementById('kpi-pM').innerHTML=`
+    <div class="kpi pM"><div class="kpi-label">Y1 portfolio</div><div class="kpi-value amber">${fmtD(Math.round(y1.pM.avgPort))}</div><div class="kpi-sub">${fmt(y1.pM.nLoans)} units avg</div></div>
+    <div class="kpi pM"><div class="kpi-label">Lending rate</div><div class="kpi-value amber">${fmtP(gv('pM-rate'))}</div><div class="kpi-sub">Gross spread ${fmtP(y1.pM.grossSpread)}</div></div>
+    <div class="kpi pM"><div class="kpi-label">Net spread Y1</div><div class="kpi-value pos">${fmtD(Math.round(y1.pM.netSpread))}</div><div class="kpi-sub">${fmtP(y1.pM.netYield)} net yield</div></div>
+    <div class="kpi pM"><div class="kpi-label">Net loss rate</div><div class="kpi-value neg">${fmtP(y1.pM.netLossRate)}</div><div class="kpi-sub">Tenor ${fmt(gv('pM-tenor'))} mo · revolving</div></div>
+  `;
+
+  renderOverview(years);
+  renderPnL(years,sh);
+  renderPortfolio(years);
+  renderInvestor(years,sh);
+  if(document.getElementById('tab-scenarios').classList.contains('active'))renderScenarios();
+}
+
+function renderOverview(years){
+  const labels=['Year 1','Year 2','Year 3','Year 4','Year 5'];
+  if(cOv)cOv.destroy();
+  cOv=new Chart(document.getElementById('cOverview'),{type:'bar',
+    data:{labels,datasets:[
+      {label:'Plan Menor interest',data:years.map(y=>Math.round(y.pm.grossInterest)),backgroundColor:'rgba(77,159,255,0.7)',borderRadius:4,stack:'income'},
+      {label:'Plan Mayor interest',data:years.map(y=>Math.round(y.pM.grossInterest)),backgroundColor:'rgba(245,166,35,0.7)',borderRadius:4,stack:'income'},
+      {label:'Total costs',data:years.map(y=>Math.round(y.pm.fundCost+y.pM.fundCost+y.pm.netLoss+y.pM.netLoss+y.totalOpex+y.igtf)),backgroundColor:'rgba(224,92,92,0.5)',borderRadius:4,stack:'costs'},
+      {label:'Net income',data:years.map(y=>Math.round(y.netIncome)),type:'line',borderColor:'#22c98a',backgroundColor:'rgba(34,201,138,0.08)',pointBackgroundColor:'#22c98a',pointRadius:4,fill:true,tension:0.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.6,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1d2130',titleColor:'#9196a8',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:ctx=>' '+fmtD(ctx.raw)}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#555c72',font:{size:11,family:"'DM Mono'"}}},y:{stacked:false,grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtAx(v),color:'#555c72',font:{size:11,family:"'DM Mono'"}}}}}
+  });
+}
+
+function buildTable(id,rowDefs,years){
+  let html='<thead><tr><th style="min-width:210px;">Line item</th>';
+  [1,2,3,4,5].forEach(y=>html+=`<th>Year ${y}</th>`);
+  html+='</tr></thead><tbody>';
+  rowDefs.forEach(r=>{
+    if(r.grp){html+=`<tr class="grp ${r.cls||''}"><td colspan="6">${r.label}</td></tr>`;return;}
+    const rc=r.tot?'tot':r.sub?'sub':'';
+    html+=`<tr class="${rc}"><td>${r.label}</td>`;
+    years.forEach(y=>{const v=Math.round(r.fn(y,y===years[0]));const vc=v<0?'n':(r.pos?'p':'');html+=`<td class="${vc}">${v<0?'('+fmtD(Math.abs(v))+')':fmtD(v)}</td>`;});
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById(id).innerHTML=html;
+}
+
+function renderPnL(years,sh){
+  buildTable('pnl-pm',[
+    {grp:true,label:'Income',cls:'pm'},
+    {label:'Gross interest income',fn:y=>y.pm.grossInterest,pos:true},
+    {label:'Origination fee income (new loans only)',fn:y=>y.pm.origIncome,pos:true},
+    {label:'Cost of funds',fn:y=>-y.pm.fundCost},
+    {label:'Gross defaults',fn:y=>-y.pm.grossDef},
+    {label:'Recoveries (repo & resale)',fn:y=>y.pm.recovery,pos:true},
+    {label:'Net credit loss',fn:y=>-y.pm.netLoss},
+    {label:'Net spread',fn:y=>y.pm.netSpread,sub:true},
+    {grp:true,label:'Activity',cls:'pm'},
+    {label:'Avg outstanding portfolio',fn:y=>y.pm.avgPort},
+    {label:'New originations in year',fn:y=>y.pm.newOrig},
+  ],years);
+  buildTable('pnl-pM',[
+    {grp:true,label:'Income',cls:'pM'},
+    {label:'Gross interest income',fn:y=>y.pM.grossInterest,pos:true},
+    {label:'Origination fee income (new facilities only)',fn:y=>y.pM.origIncome,pos:true},
+    {label:'Cost of funds',fn:y=>-y.pM.fundCost},
+    {label:'Gross defaults',fn:y=>-y.pM.grossDef},
+    {label:'Recoveries (vehicle inventory)',fn:y=>y.pM.recovery,pos:true},
+    {label:'Net credit loss',fn:y=>-y.pM.netLoss},
+    {label:'Net spread',fn:y=>y.pM.netSpread,sub:true},
+    {grp:true,label:'Activity',cls:'pM'},
+    {label:'Avg outstanding portfolio',fn:y=>y.pM.avgPort},
+    {label:'New facilities originated in year',fn:y=>y.pM.newOrig},
+  ],years);
+  buildTable('pnl-tot',[
+    {grp:true,label:'Consolidated Net Spread',cls:'tot'},
+    {label:'Plan Menor net spread',fn:y=>y.pm.netSpread,pos:true},
+    {label:'Plan Mayor net spread',fn:y=>y.pM.netSpread,pos:true},
+    {label:'Total net spread',fn:y=>y.totalNetSpread,sub:true},
+    {grp:true,label:'Operating Expenses'},
+    {label:'Staff & operations',fn:()=>-sh.staff},
+    {label:'Legal & compliance',fn:()=>-sh.legal},
+    {label:'Technology & credit systems',fn:()=>-sh.tech},
+    {label:'Repo & collections',fn:()=>-sh.repo},
+    {label:'Year 1 setup costs',fn:(y,isY1)=>isY1?-sh.setup:0},
+    {label:'IGTF on USD collections',fn:y=>-y.igtf},
+    {label:'EBITDA',fn:y=>y.ebitda,sub:true},
+    {label:'ISLR corporate income tax',fn:y=>-y.tax},
+    {label:'Net income',fn:y=>y.netIncome,tot:true},
+    {grp:true,label:'Capital Cost Breakdown'},
+    {label:'Credit line funding cost',fn:y=>-y.clinePortCost},
+    {label:'Investor funding cost (pref return)',fn:y=>-y.invPortCost},
+  ],years);
+}
+
+function renderPortfolio(years){
+  const y1=years[0],pm=getPM('base'),pM=getPMay('base');
+  const cof=blendedCoC();
+  const perPm={gross:pm.lsize*pm.lrate,cof:pm.lsize*cof,loss:pm.lsize*pm.def*(1-pm.rec),orig:pm.lsize*pm.orig};
+  perPm.net=perPm.gross-perPm.cof-perPm.loss+perPm.orig;
+  const perPM={gross:pM.lsize*pM.lrate*(pM.tenor/12),cof:pM.lsize*cof*(pM.tenor/12),loss:pM.lsize*pM.def*(1-pM.rec),orig:pM.lsize*pM.orig};
+  perPM.net=perPM.gross-perPM.cof-perPM.loss+perPM.orig;
+  document.getElementById('port-pm').innerHTML=`
+    <div class="kpi pm"><div class="kpi-label">Y1 avg loans outstanding</div><div class="kpi-value blue">${fmt(y1.pm.nLoans)}</div><div class="kpi-sub">at ${fmtD(pm.lsize)} avg</div></div>
+    <div class="kpi pm"><div class="kpi-label">Y5 portfolio</div><div class="kpi-value blue">${fmtD(Math.round(years[4].pm.avgPort))}</div><div class="kpi-sub">${fmt(years[4].pm.nLoans)} loans</div></div>
+    <div class="kpi pm"><div class="kpi-label">Gross spread</div><div class="kpi-value pos">${fmtP(y1.pm.grossSpread)}</div><div class="kpi-sub">lending minus blended CoC</div></div>
+    <div class="kpi pm"><div class="kpi-label">Net yield</div><div class="kpi-value pos">${fmtP(y1.pm.netYield)}</div><div class="kpi-sub">after CoC + losses</div></div>
+  `;
+  document.getElementById('port-pM').innerHTML=`
+    <div class="kpi pM"><div class="kpi-label">Y1 avg facilities outstanding</div><div class="kpi-value amber">${fmt(y1.pM.nLoans)}</div><div class="kpi-sub">at ${fmtD(pM.lsize)} avg</div></div>
+    <div class="kpi pM"><div class="kpi-label">Y5 portfolio</div><div class="kpi-value amber">${fmtD(Math.round(years[4].pM.avgPort))}</div><div class="kpi-sub">${fmt(years[4].pM.nLoans)} facilities</div></div>
+    <div class="kpi pM"><div class="kpi-label">Gross spread</div><div class="kpi-value pos">${fmtP(y1.pM.grossSpread)}</div><div class="kpi-sub">lending minus blended CoC</div></div>
+    <div class="kpi pM"><div class="kpi-label">Net yield</div><div class="kpi-value pos">${fmtP(y1.pM.netYield)}</div><div class="kpi-sub">short-tenor revolving</div></div>
+  `;
+  const labels=['Year 1','Year 2','Year 3','Year 4','Year 5'];
+  if(cPo)cPo.destroy();
+  cPo=new Chart(document.getElementById('cPort'),{type:'bar',
+    data:{labels,datasets:[
+      {label:'Plan Menor',data:years.map(y=>Math.round(y.pm.avgPort)),backgroundColor:'rgba(77,159,255,0.65)',borderRadius:4,stack:'s'},
+      {label:'Plan Mayor',data:years.map(y=>Math.round(y.pM.avgPort)),backgroundColor:'rgba(245,166,35,0.65)',borderRadius:4,stack:'s'},
+      {label:'Consolidated',data:years.map(y=>Math.round(y.totalAvgPort)),type:'line',borderColor:'#22c98a',backgroundColor:'#22c98a',pointBackgroundColor:'#22c98a',pointRadius:4,fill:false,tension:0.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.6,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1d2130',titleColor:'#9196a8',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:ctx=>' '+fmtD(ctx.raw)}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#555c72',font:{size:11,family:"'DM Mono'"}}},y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtAx(v),color:'#555c72',font:{size:11,family:"'DM Mono'"}}}}}
+  });
+  document.getElementById('per-pm').innerHTML=`
+    <div class="kpi pm"><div class="kpi-label">Interest / loan / yr</div><div class="kpi-value pos">${fmtD(Math.round(perPm.gross))}</div><div class="kpi-sub">${fmtP(pm.lrate*100)} on ${fmtD(pm.lsize)}</div></div>
+    <div class="kpi pm"><div class="kpi-label">Funding cost / loan / yr</div><div class="kpi-value neg">(${fmtD(Math.round(perPm.cof))})</div><div class="kpi-sub">${fmtP(cof*100)} blended CoC</div></div>
+    <div class="kpi pm"><div class="kpi-label">Expected loss / loan</div><div class="kpi-value neg">(${fmtD(Math.round(perPm.loss))})</div><div class="kpi-sub">net of ${fmt(pm.rec*100)}% recovery</div></div>
+    <div class="kpi pm"><div class="kpi-label">Net per loan / yr</div><div class="kpi-value pos">${fmtD(Math.round(perPm.net))}</div><div class="kpi-sub">${fmtP((perPm.net/pm.lsize)*100)} return on principal</div></div>
+  `;
+  document.getElementById('per-pM').innerHTML=`
+    <div class="kpi pM"><div class="kpi-label">Interest / facility (full tenor)</div><div class="kpi-value pos">${fmtD(Math.round(perPM.gross))}</div><div class="kpi-sub">${fmtP(pM.lrate*100)} × ${fmt(pM.tenor)} mo on ${fmtD(pM.lsize)}</div></div>
+    <div class="kpi pM"><div class="kpi-label">Funding cost / facility</div><div class="kpi-value neg">(${fmtD(Math.round(perPM.cof))})</div><div class="kpi-sub">${fmtP(cof*100)} blended CoC × ${fmt(pM.tenor)} mo</div></div>
+    <div class="kpi pM"><div class="kpi-label">Expected loss / facility</div><div class="kpi-value neg">(${fmtD(Math.round(perPM.loss))})</div><div class="kpi-sub">net of ${fmt(pM.rec*100)}% recovery</div></div>
+    <div class="kpi pM"><div class="kpi-label">Net per facility</div><div class="kpi-value pos">${fmtD(Math.round(perPM.net))}</div><div class="kpi-sub">${fmtP((perPM.net/pM.lsize)*100)} return on principal</div></div>
+  `;
+}
+
+
+function buildSplitCard(yrs) {
+  const totNI  = yrs.reduce((a,y) => a + y.netIncome, 0);
+  const totInv = yrs.reduce((a,y) => a + y.invDistribution, 0);
+  const totMgmt= yrs.reduce((a,y) => a + y.mgmtShare, 0);
+  if (totNI <= 0) {
+    return '<div class="kpi tot"><div class="kpi-label">Investor / mgmt split</div><div class="kpi-value" style="font-size:14px;color:var(--text3);">N/A</div><div class="kpi-sub">Net income not yet positive</div></div>';
+  }
+  return '<div class="kpi tot"><div class="kpi-label">Investor / mgmt split</div><div class="kpi-value">' + fmt(totInv/totNI*100,0) + '% / ' + fmt(totMgmt/totNI*100,0) + '%</div><div class="kpi-sub">of ' + fmtD(Math.round(totNI)) + ' cumulative net income</div></div>';
+}
+
+function renderInvestor(years,sh){
+  const horizon=Math.min(sh.invHorizon,5);
+  const yrs=years.slice(0,horizon);
+  const invCapitalY1=yrs[0].invCap; // anchored to Y1 fixed deployment
+  // Cash flows for IRR: -capital at t=0, annual distributions Y1..Yn, +principal returned at end
+  // The investor's cost of capital is already in the P&L blended CoC.
+  // Here we measure: given that cost structure, what return do they actually receive?
+  const distributions=yrs.map(y=>y.invDistribution);
+  const terminalCapReturn=invCapitalY1; // full principal returned at horizon end
+  const cashflows=[-invCapitalY1,...distributions];
+  cashflows[cashflows.length-1]+=terminalCapReturn;
+  const irr=computeIRR(cashflows)*100;
+  const totalReturned=distributions.reduce((a,b)=>a+b,0)+terminalCapReturn;
+  const moic=totalReturned/invCapitalY1;
+  const dpi=distributions.reduce((a,b)=>a+b,0)/invCapitalY1;
+  const tvpi=totalReturned/invCapitalY1;
+  const paybackYr=(() => {let cum=0;for(let i=0;i<distributions.length;i++){cum+=distributions[i];if(cum>=invCapitalY1)return i+1;}return horizon+1;})();
+  const totalMgmt=yrs.reduce((a,y)=>a+y.carryAmt+(y.mgmtShare>0?y.mgmtShare:0),0);
+
+  const paybackLabel=typeof paybackYr==='number'?'Year '+paybackYr:paybackYr+' yrs';
+  document.getElementById('inv-kpis').innerHTML=`
+    <div class="kpi inv"><div class="kpi-label">Investor capital deployed (Y1)</div><div class="kpi-value purple">${fmtD(Math.round(invCapitalY1))}</div><div class="kpi-sub">${fmt((1-sh.clinePct)*100)}% of Y1 avg portfolio · fixed amount</div></div>
+    <div class="kpi inv" style="border-color:var(--green);border-left-width:3px;"><div class="kpi-label">Capital fully returned in</div><div class="kpi-value ${typeof paybackYr==='number'?'pos':'amber'}">${paybackLabel}</div><div class="kpi-sub">cumulative distributions ≥ capital invested · updates live</div></div>
+    <div class="kpi inv"><div class="kpi-label">IRR <span style="font-size:9px;color:var(--text3);font-weight:400;">(annualized)</span></div><div class="kpi-value ${irr>0?'pos':'neg'}">${fmtP(irr)}</div><div class="kpi-sub">${horizon}-yr horizon · includes principal return at exit</div></div>
+    <div class="kpi inv"><div class="kpi-label">MOIC <span style="font-size:9px;color:var(--text3);font-weight:400;">(over ${horizon} yrs)</span></div><div class="kpi-value ${moic>1?'pos':'neg'}">${fmt(moic,2)}×</div><div class="kpi-sub">total cash returned ÷ capital deployed over ${horizon}-yr period</div></div>
+    <div class="kpi inv"><div class="kpi-label">DPI <span style="font-size:9px;color:var(--text3);font-weight:400;">(over ${horizon} yrs)</span></div><div class="kpi-value pos">${fmt(dpi,2)}×</div><div class="kpi-sub">cash distributions ÷ capital · excl. terminal return · ${horizon}-yr accumulation</div></div>
+    <div class="kpi inv"><div class="kpi-label">Hurdle rate</div><div class="kpi-value purple">${fmtP(sh.invRate*100)}</div><div class="kpi-sub">investor preferred return before carry</div></div>
+  `;
+
+  // Benchmarks by segment
+  document.getElementById('inv-benchmarks').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">● Plan Menor — Vehicle Loans</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">IRR benchmark: <span style="color:var(--green);font-family:var(--mono);">18–28%</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">MOIC (3–4 yr): <span style="color:var(--green);font-family:var(--mono);">1.6–2.2×</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5;">Consumer auto lending in LatAm emerging markets. Comparable: Credifamilia (COL), Crediq (GT/SV). Spread-driven, high yield.</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">● Plan Mayor — Dealer Floor Plan</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">IRR benchmark: <span style="color:var(--green);font-family:var(--mono);">14–20%</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">MOIC (3–4 yr): <span style="color:var(--green);font-family:var(--mono);">1.4–1.8×</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5;">Short-tenor revolving dealer credit. Comparable: NextGear (US), Floorplan Xpress. Lower rate but faster capital recycling — annualised yield is higher than it appears.</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">● Motorcycle Financing (reference)</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">IRR benchmark: <span style="color:var(--green);font-family:var(--mono);">22–35%</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">MOIC (3–4 yr): <span style="color:var(--green);font-family:var(--mono);">1.8–2.6×</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5;">Highest-yield segment. Comparable: Italika/Credi-Q (MX/CA), Movesta (VZ). Smaller ticket, higher rate, higher default — strong returns if collection infrastructure is solid.</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);padding:8px 10px;background:var(--bg3);border-radius:var(--r);border-left:2px solid var(--text3);">
+      <strong style="color:var(--text2);">On MOIC and time:</strong> MOIC always references a specific investment period — here, the horizon set by the slider. A 2.0× MOIC over 3 years = ~26% IRR. The same 2.0× over 7 years = ~10% IRR. Always read MOIC and IRR together. The time base is from first capital outflow (Year 0) to final cash inflow (end of horizon), including return of principal.
+    </div>
+  `;
+  document.getElementById('mgmt-kpis').innerHTML=`
+    <div class="kpi tot"><div class="kpi-label">Total carry earned (${horizon} yr)</div><div class="kpi-value pos">${fmtD(Math.round(yrs.reduce((a,y)=>a+y.carryAmt,0)))}</div><div class="kpi-sub">${fmt(sh.carry*100)}% of profits above hurdle</div></div>
+    <div class="kpi tot"><div class="kpi-label">Mgmt total net income</div><div class="kpi-value pos">${fmtD(Math.round(yrs.reduce((a,y)=>a+y.mgmtShare,0)))}</div><div class="kpi-sub">after investor distributions</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y5 mgmt income</div><div class="kpi-value pos">${fmtD(Math.round(yrs[Math.min(horizon-1,4)].mgmtShare))}</div><div class="kpi-sub">annual run-rate</div></div>
+    ${buildSplitCard(yrs)}
+  `;
+
+  // build investor table
+  let html='<thead><tr><th style="min-width:220px;">Line item</th>';
+  yrs.forEach((_,i)=>html+=`<th>Year ${i+1}</th>`);
+  html+='</tr></thead><tbody>';
+  const invRows=[
+    {label:'Investor capital deployed',fn:(_,i)=>i===0?-invCapitalY1:0,cls:'pu'},
+    {label:'Preferred return earned',fn:y=>Math.min(y.prefReturn,y.netIncome),pos:true},
+    {label:'Profit share above hurdle',fn:y=>y.invProfitShare,pos:true},
+    {label:'Total investor distribution',fn:y=>y.invDistribution,sub:true},
+    {label:'Capital returned (terminal)',fn:(_,i)=>i===yrs.length-1?invCapitalY1:0,pos:true},
+    {label:'Net investor cash flow',fn:(y,i)=>(i===0?-invCapitalY1:0)+y.invDistribution+(i===yrs.length-1?invCapitalY1:0),tot:true},
+    {grp:true,label:'Cumulative'},
+    {label:'Cumulative distributions',fn:(y,i)=>yrs.slice(0,i+1).reduce((a,yy)=>a+yy.invDistribution,0),pos:true},
+    {label:'Cumulative return on capital',fn:(y,i)=>yrs.slice(0,i+1).reduce((a,yy)=>a+yy.invDistribution,0)/invCapitalY1*100},
+    {grp:true,label:'Management'},
+    {label:'Carry earned',fn:y=>y.carryAmt,pos:true},
+    {label:'Management net income',fn:y=>y.mgmtShare,pos:true},
+  ];
+  invRows.forEach(r=>{
+    if(r.grp){html+=`<tr class="grp"><td colspan="${yrs.length+1}">${r.label}</td></tr>`;return;}
+    const rc=r.tot?'tot':r.sub?'sub':'';
+    html+=`<tr class="${rc}"><td>${r.label}</td>`;
+    yrs.forEach((y,i)=>{
+      const v=Math.round(r.fn(y,i));
+      let vc=v<0?'n':(r.pos?'p':(r.cls||''));
+      if(r.label.includes('Cumulative return'))vc='';
+      const disp=r.label.includes('Cumulative return')?fmtP(v):v<0?'('+fmtD(Math.abs(v))+')':fmtD(v);
+      html+=`<td class="${vc}">${disp}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('pnl-inv').innerHTML=html;
+
+  // investor CF chart
+  const cfLabels=yrs.map((_,i)=>'Year '+(i+1));
+  const prefArr=yrs.map(y=>Math.round(Math.min(y.prefReturn,y.netIncome)));
+  const profShareArr=yrs.map(y=>Math.round(y.invProfitShare));
+  let cum=0;const cumArr=yrs.map(y=>{cum+=y.invDistribution;return Math.round(cum);});
+  if(cInvCF)cInvCF.destroy();
+  cInvCF=new Chart(document.getElementById('cInvCF'),{type:'bar',
+    data:{labels:cfLabels,datasets:[
+      {label:'Preferred return',data:prefArr,backgroundColor:'rgba(167,139,250,0.8)',borderRadius:4,stack:'dist'},
+      {label:'Profit share',data:profShareArr,backgroundColor:'rgba(167,139,250,0.35)',borderRadius:4,stack:'dist'},
+      {label:'Cumulative returned',data:cumArr,type:'line',borderColor:'#22c98a',backgroundColor:'rgba(34,201,138,0.08)',pointBackgroundColor:'#22c98a',pointRadius:4,fill:true,tension:0.3,yAxisID:'y'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.6,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1d2130',titleColor:'#9196a8',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:ctx=>' '+fmtD(ctx.raw)}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#555c72',font:{size:11,family:"'DM Mono'"}}},y:{stacked:false,grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtAx(v),color:'#555c72',font:{size:11,family:"'DM Mono'"}}}}}
+  });
+}
+
+function renderScenarios(){
+  const SCS=['base','bull','bear'],colors={base:'#4d9fff',bull:'#22c98a',bear:'#e05c5c'};
+  const labels=['Year 1','Year 2','Year 3','Year 4','Year 5'];
+  const allData={};
+  SCS.forEach(sc=>{
+    const y1sc=calcYear(sc,1);
+    const invCapSc=y1sc.totalAvgPort*(1-gv('cline-pct')/100);
+    allData[sc]=[1,2,3,4,5].map(y=>calcYear(sc,y,invCapSc));
+  });
+  const cur=allData[curSc],y5=cur[4];
+  document.getElementById('sc-metrics').innerHTML=`
+    <div class="kpi tot"><div class="kpi-label">Y5 combined portfolio</div><div class="kpi-value">${fmtD(Math.round(y5.totalAvgPort))}</div></div>
+    <div class="kpi pm"><div class="kpi-label">Y5 Plan Menor portfolio</div><div class="kpi-value blue">${fmtD(Math.round(y5.pm.avgPort))}</div></div>
+    <div class="kpi pM"><div class="kpi-label">Y5 Plan Mayor portfolio</div><div class="kpi-value amber">${fmtD(Math.round(y5.pM.avgPort))}</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y1 EBITDA</div><div class="kpi-value ${cur[0].ebitda>=0?'pos':'neg'}">${fmtD(Math.round(cur[0].ebitda))}</div></div>
+    <div class="kpi tot"><div class="kpi-label">Y5 EBITDA</div><div class="kpi-value pos">${fmtD(Math.round(y5.ebitda))}</div></div>
+    <div class="kpi tot"><div class="kpi-label">5yr net income</div><div class="kpi-value pos">${fmtD(Math.round(cur.reduce((a,y)=>a+y.netIncome,0)))}</div></div>
+  `;
+  const cumData={};
+  SCS.forEach(sc=>{let s=0;cumData[sc]=allData[sc].map(y=>{s+=y.netIncome;return Math.round(s);});});
+  if(cSc)cSc.destroy();
+  cSc=new Chart(document.getElementById('cSc'),{type:'line',
+    data:{labels,datasets:SCS.map(sc=>({label:sc,data:cumData[sc],borderColor:colors[sc],backgroundColor:colors[sc],pointBackgroundColor:colors[sc],pointRadius:4,fill:false,tension:0.3,borderDash:sc==='bear'?[4,3]:[]
+    }))},
+    options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.6,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtD(ctx.raw)},backgroundColor:'#1d2130',titleColor:'#9196a8',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+      scales:{x:{grid:{display:false},ticks:{color:'#555c72',font:{size:11,family:"'DM Mono'"}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtAx(v),color:'#555c72',font:{size:11,family:"'DM Mono'"}}}}}
+  });
+  const y5E=SCS.map(sc=>Math.round(allData[sc][4].ebitda));
+  if(cScB)cScB.destroy();
+  cScB=new Chart(document.getElementById('cScBar'),{type:'bar',
+    data:{labels:['Bear','Base','Bull'],datasets:[{data:[y5E[2],y5E[0],y5E[1]],backgroundColor:['rgba(224,92,92,0.7)','rgba(77,159,255,0.75)','rgba(34,201,138,0.75)'],borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtD(ctx.raw)},backgroundColor:'#1d2130',titleColor:'#9196a8',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtAx(v),color:'#555c72',font:{size:11,family:"'DM Mono'"}}},y:{grid:{display:false},ticks:{color:'#9196a8',font:{size:12,family:"'DM Sans'"}}}}}
+  });
+}
+
+function setSc(sc){curSc=sc;['base','bull','bear'].forEach(s=>document.getElementById('sc-'+s).className='sc-card'+(s===sc?' active':''));renderScenarios();}
+function sw(tab){
+  const tabs=['overview','pnl','portfolio','scenarios','investor'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.className='tab'+(tabs[i]===tab?' active':''));
+  document.querySelectorAll('.panel').forEach(p=>p.className='panel');
+  document.getElementById('tab-'+tab).className='panel active';
+  if(tab==='scenarios')renderScenarios();
+}
+
+update();
+</script>
+</body>
+</html>
